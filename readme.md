@@ -33,8 +33,8 @@ Bug 现象：
 
 ### 0. 下载文件
 
-1.  `app-release.apk` ： 
-2.  `home_launcher_redirect.zip` ： 
+1.  `app-release.apk` ： https://raw.githubusercontent.com/xieincz/home_launcher_redirect/refs/heads/main/app-release.apk
+2.  `home_launcher_redirect.zip` ： https://raw.githubusercontent.com/xieincz/home_launcher_redirect/refs/heads/main/home_launcher_redirect.zip
 
 ### 1. 安装应用
 
