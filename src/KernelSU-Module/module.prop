@@ -1,0 +1,6 @@
+id=home_launcher_redirect
+name=Home Launcher Redirect
+version=1.0
+versionCode=1
+author=xieincz
+description=Automatically launch com.android.launcher on boot complete

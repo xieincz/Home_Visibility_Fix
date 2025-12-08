@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Home Launcher Redirect</string>
+    <string name="module_description">劫持 Home 键事件，跳转到指定的启动器</string>
+
+    <!-- Settings Activity -->
+    <string name="settings_title">Home 键设置</string>
+    <string name="settings_description">选择按下 Home 键时要启动的启动器。默认使用系统设置的默认启动器。</string>
+    <string name="current_launcher">当前选择</string>
+    <string name="available_launchers">可用启动器</string>
+    <string name="system_default">系统默认启动器</string>
+    <string name="launcher_icon">启动器图标</string>
+    <string name="selected_indicator">已选择标识</string>
+
+    <!-- Toast messages -->
+    <string name="launcher_selected">已选择: %s</string>
+    <string name="no_launchers_found">未找到可用的启动器</string>
+
+    <!-- Preference keys -->
+    <string name="pref_selected_launcher">selected_launcher_package</string>
+    <string name="pref_selected_launcher_class">selected_launcher_class</string>
+</resources>

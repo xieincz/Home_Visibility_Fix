@@ -1,0 +1,55 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.homelauncher'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.homelauncher"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            // 使用 Android Studio 默认的 debug 签名
+            storeFile file("${System.getProperty('user.home')}/.android/debug.keystore")
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    androidResources {
+        noCompress 'xposed_init'
+    }
+
+    // 不压缩 assets 目录下的文件
+}
+
+dependencies {
+    // Xposed API - 仅编译时使用，运行时由框架提供
+    compileOnly 'de.robv.android.xposed:api:82'
+    
+    // 可选：AppCompat 用于 Material 主题
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+}

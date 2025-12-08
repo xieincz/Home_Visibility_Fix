@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LSPosed 作用域 - 指定要 Hook 的包名 -->
+    <string-array name="xposed_scope">
+        <item>com.android.launcher</item>
+    </string-array>
+</resources>
