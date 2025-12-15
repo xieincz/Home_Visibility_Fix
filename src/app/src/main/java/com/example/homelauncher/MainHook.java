@@ -20,6 +20,19 @@ public class MainHook implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         // Hook 系统桌面（com.android.launcher）
         if (lpparam.packageName.equals("com.android.launcher")) {
+            // 安全检查：如果用户选择的启动器就是 com.android.launcher，则不进行 hook
+            // 避免无限递归重定向
+            XSharedPreferences prefs = new XSharedPreferences(MODULE_PACKAGE, PREFS_NAME);
+            prefs.makeWorldReadable();
+            prefs.reload();
+
+            String selectedPackage = prefs.getString("selected_launcher_package", "system_default");
+
+            if (selectedPackage.equals("com.android.launcher")) {
+                XposedBridge.log(TAG + ": Selected launcher is com.android.launcher, skipping hook to avoid infinite recursion");
+                return;
+            }
+
             // XposedBridge.log(TAG + ": Hooking system launcher (com.android.launcher)...");
             try {
                 hookSystemLauncher(lpparam);
