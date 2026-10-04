@@ -4,7 +4,7 @@
 
 ## 安装
 
-1. 按下方构建说明生成并安装模块 APK。
+1. 按下方构建说明生成并安装模块 APK，或者直接在[Release页面下载最新构建好的APK](https://github.com/xieincz/Home_Visibility_Fix/releases)。
 2. 在 LSPosed 中启用 **Home Visibility Fix**，作用域只选 **系统桌面（com.android.launcher）**。
 3. 禁用旧 Home Launcher Redirect 的 LSPosed 和 KernelSU 模块，保留自己原本的第三方默认桌面。
 4. 重启手机，或重启系统桌面进程，使 hook 加载。后续开机自动生效。
