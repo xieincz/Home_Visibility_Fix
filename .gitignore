@@ -1,5 +1,9 @@
 /tools
 /tmp
+/dist
+/scripts
+AGENTS.local.md
+
 
 # Gradle files
 .gradle/
