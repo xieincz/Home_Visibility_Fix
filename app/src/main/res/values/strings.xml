@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name" translatable="false">Home Visibility Fix</string>
+    <string name="module_description">Fix the one-second wallpaper-only gap before home screen icons appear when returning Home with a third-party default launcher on ColorOS.</string>
+    <string name="settings_title">Settings</string>
+    <string name="logs">Enable module logs</string>
+    <string name="logs_summary">Record fixes and errors to help troubleshoot issues.</string>
+    <string name="buttons">Skip button Home animation</string>
+    <string name="buttons_summary">Return directly to the home screen when pressing Home.</string>
+    <string name="gestures">Skip gesture Home animation</string>
+    <string name="gestures_summary">Keep finger tracking. Finish the remaining animation immediately once the gesture is released and Home is selected.</string>
+    <string name="settings_hint">Changes apply immediately. After first enabling the module in LSPosed, restart System Launcher or reboot.</string>
+    <string name="about">About · Source code</string>
+    <string name="no_browser">No browser is available to open this link.</string>
+    <string name="save_failed">Could not save the setting. Please try again.</string>
+    <string name="language" translatable="false">语言 / Language</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_chinese" translatable="false">简体中文</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="cancel">Cancel</string>
+</resources>

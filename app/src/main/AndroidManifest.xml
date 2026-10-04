@@ -1,9 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:label="Home Visibility Fix" android:allowBackup="false"
-        android:hasCode="true" android:supportsRtl="true">
+    <application android:label="@string/app_name" android:theme="@style/AppTheme" android:allowBackup="false"
+        android:icon="@drawable/ic_home" android:localeConfig="@xml/locales_config" android:hasCode="true" android:supportsRtl="true">
+        <activity android:name=".SettingsActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
+            </intent-filter>
+        </activity>
+        <provider android:name=".SettingsProvider"
+            android:authorities="io.github.xieincz.homevisibility.settings"
+            android:exported="true" android:directBootAware="true" />
         <meta-data android:name="xposedmodule" android:value="true" />
         <meta-data android:name="xposeddescription"
-            android:value="修复 ColorOS 使用第三方桌面作为默认桌面的时候，返回home会显示1秒壁纸然后才加载桌面图标的bug。" />
+            android:value="@string/module_description" />
         <meta-data android:name="xposedminversion" android:value="82" />
         <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
     </application>

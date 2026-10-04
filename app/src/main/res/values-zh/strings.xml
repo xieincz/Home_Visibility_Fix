@@ -1,0 +1,16 @@
+<resources>
+    <string name="settings_title">设置</string>
+    <string name="logs">记录模块日志</string>
+    <string name="logs_summary">记录模块的修复和错误信息，便于排查问题。</string>
+    <string name="buttons">跳过虚拟按键 Home 动画</string>
+    <string name="buttons_summary">按下 Home 时直接返回桌面。</string>
+    <string name="gestures">跳过全面屏手势 Home 动画</string>
+    <string name="gestures_summary">保留跟手操作；松手并确认返回桌面后，立即完成收尾动画。</string>
+    <string name="settings_hint">更改立即生效。首次在 LSPosed 中启用模块后，需重启系统桌面或手机。</string>
+    <string name="about">关于 · 查看源代码</string>
+    <string name="no_browser">未找到可打开链接的浏览器。</string>
+    <string name="save_failed">设置保存失败，请重试。</string>
+    <string name="module_description">修复 ColorOS 使用第三方桌面作为默认桌面的时候，返回home会显示1秒壁纸然后才加载桌面图标的bug。</string>
+    <string name="language_system">跟随系统</string>
+    <string name="cancel">取消</string>
+</resources>

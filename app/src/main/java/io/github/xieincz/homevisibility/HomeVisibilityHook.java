@@ -2,6 +2,11 @@ package io.github.xieincz.homevisibility;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.ActivityOptions;
+import android.app.Application;
+import android.animation.Animator;
+import android.graphics.PointF;
+import android.view.animation.Interpolator;
 import java.lang.reflect.Field;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
@@ -24,10 +29,90 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam pkg) {
         if (!"com.android.launcher".equals(pkg.packageName)
                 || !"com.android.launcher".equals(pkg.processName)) return;
-        installSurfaceHook(pkg.classLoader);
-        installHomeTargetHook(pkg.classLoader);
-        installConfigurationHook(pkg.classLoader);
-        installHomeKeyHook(pkg.classLoader);
+        AtomicBoolean initialized = new AtomicBoolean();
+        XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
+            @Override protected void afterHookedMethod(MethodHookParam param) {
+                if (!initialized.compareAndSet(false, true)) return;
+                HookSettings.initialize((Application) param.thisObject);
+                installSurfaceHook(pkg.classLoader);
+                installHomeTargetHook(pkg.classLoader);
+                installConfigurationHook(pkg.classLoader);
+                installHomeKeyHook(pkg.classLoader);
+                installGestureAnimationHook(pkg.classLoader);
+            }
+        });
+    }
+
+    private static void installGestureAnimationHook(ClassLoader loader) {
+        try {
+            Class<?> base = XposedHelpers.findClass(
+                    "com.oplus.quickstep.gesture.OplusBaseSwipeUpHandler", loader);
+            Class<?> fallback = XposedHelpers.findClass("com.android.quickstep.FallbackSwipeHandler", loader);
+            Class<?> endTarget = XposedHelpers.findClass(
+                    "com.android.quickstep.GestureState$GestureEndTarget", loader);
+            Class<?>[] signature = {float.class, float.class, long.class, Interpolator.class,
+                    endTarget, PointF.class, boolean.class, boolean.class};
+            Method animate;
+            try {
+                animate = XposedHelpers.findMethodExact(base, "animateToProgressInternal", signature);
+            } catch (NoSuchMethodError error) {
+                animate = XposedHelpers.findMethodExact(base, "lambda$animateToProgress$26", signature);
+            }
+            Method finish = XposedHelpers.findMethodExact(base, "endRunningWindowAnim", boolean.class);
+            Field deviceField = XposedHelpers.findField(base, "mDeviceState");
+            Field parallelField = XposedHelpers.findField(base, "mParallelRunningAnim");
+            AtomicBoolean failed = new AtomicBoolean();
+            XposedBridge.hookMethod(animate, new XC_MethodHook() {
+                @Override protected void beforeHookedMethod(MethodHookParam param) {
+                    if (failed.get() || !HookSettings.skipGestures()
+                            || !fallback.isInstance(param.thisObject)
+                            || !"HOME".equals(String.valueOf(param.args[4]))) return;
+                    try {
+                        Object device = deviceField.get(param.thisObject);
+                        if (!(boolean) XposedHelpers.callMethod(device, "isFullyGesturalNavMode")) return;
+                        // Keep the gesture decision and all normal Home setup/completion callbacks.
+                        // Only the post-release HOME animation is shortened, never RECENTS/LAST_TASK.
+                        param.setObjectExtra("skipHome", true);
+                        param.args[2] = 0L;
+                    } catch (Throwable error) { reportFailure(failed, "gesture animation", error); }
+                }
+                @Override protected void afterHookedMethod(MethodHookParam param) {
+                    if (param.hasThrowable() || !Boolean.TRUE.equals(param.getObjectExtra("skipHome"))) return;
+                    try {
+                        // OEM uses this same successful-end path for zero-duration animations.
+                        // Capture parallel animation before end callbacks release handler references.
+                        Animator parallel = (Animator) parallelField.get(param.thisObject);
+                        finish.invoke(param.thisObject, false);
+                        if (parallel != null && parallel.isStarted()) parallel.end();
+                        HookSettings.log(TAG + "completed gesture Home animation immediately");
+                    } catch (Throwable error) { reportFailure(failed, "gesture animation", error); }
+                }
+            });
+            // Fallback's atomic Home alpha/scale animation is independent of the window
+            // animator. In particular, Home-to-Home uses a spring that ignores duration=0.
+            Class<?> factory = XposedHelpers.findClass(
+                    "com.android.quickstep.FallbackSwipeHandler$FallbackHomeAnimationFactory", loader);
+            Field owner = XposedHelpers.findField(factory, "this$0");
+            Field alpha = XposedHelpers.findField(factory, "mHomeAlpha");
+            Field shift = XposedHelpers.findField(factory, "mVerticalShiftForScale");
+            XposedHelpers.findAndHookMethod(factory, "playAtomicAnimation", float.class, new XC_MethodHook() {
+                @Override protected void beforeHookedMethod(MethodHookParam param) {
+                    if (failed.get() || !HookSettings.skipGestures()) return;
+                    try {
+                        Object handler = owner.get(param.thisObject);
+                        if (!(boolean) XposedHelpers.callMethod(deviceField.get(handler),
+                                "isFullyGesturalNavMode")) return;
+                        XposedHelpers.callMethod(alpha.get(param.thisObject), "updateValue", 1.0f);
+                        XposedHelpers.callMethod(shift.get(param.thisObject), "updateValue", 0.0f);
+                        param.setResult(null);
+                    } catch (Throwable error) { reportFailure(failed, "gesture animation", error); }
+                }
+            });
+            HookSettings.log(TAG + "installed gesture animation hook v1.4");
+        } catch (Throwable error) {
+            HookSettings.log(TAG + "unsupported gesture animation API; no gesture animation hook installed");
+            HookSettings.log(error);
+        }
     }
 
     private static void installConfigurationHook(ClassLoader loader) {
@@ -88,7 +173,7 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
                                 (android.app.Application.ActivityLifecycleCallbacks) param.thisObject);
                         param.setResult(null);
                         if (reported.compareAndSet(false, true)) {
-                            XposedBridge.log(TAG + "preserved fallback gesture across configuration recreation");
+                            HookSettings.log(TAG + "preserved fallback gesture across configuration recreation");
                         }
                     } catch (Throwable error) {
                         // Restore references so OEM destruction can still cancel and clean up.
@@ -101,10 +186,10 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
                     }
                 }
             });
-            XposedBridge.log(TAG + "installed configuration hook v1.3");
+            HookSettings.log(TAG + "installed configuration hook v1.4");
         } catch (Throwable error) {
-            XposedBridge.log(TAG + "unsupported configuration API; no configuration hook installed");
-            XposedBridge.log(error);
+            HookSettings.log(TAG + "unsupported configuration API; no configuration hook installed");
+            HookSettings.log(error);
         }
     }
 
@@ -136,7 +221,7 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
                                 && Boolean.TRUE.equals(isOtherDesk.invoke(null))) {
                             param.setResult(false);
                             if (reported.compareAndSet(false, true)) {
-                                XposedBridge.log(TAG + "excluded underlying Home from closing-app animation");
+                                HookSettings.log(TAG + "excluded underlying Home from closing-app animation");
                             }
                         }
                     } catch (Throwable error) {
@@ -144,10 +229,10 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
                     }
                 }
             });
-            XposedBridge.log(TAG + "installed home target hook");
+            HookSettings.log(TAG + "installed home target hook");
         } catch (Throwable error) {
-            XposedBridge.log(TAG + "unsupported home target API; no home target hook installed");
-            XposedBridge.log(error);
+            HookSettings.log(TAG + "unsupported home target API; no home target hook installed");
+            HookSettings.log(error);
         }
     }
 
@@ -174,17 +259,17 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
                         // ColorOS's setShow() checks surface validity before appending show.
                         show.invoke(param.args[0]);
                         if (reported.compareAndSet(false, true)) {
-                            XposedBridge.log(TAG + "fallback home surface visibility restored");
+                            HookSettings.log(TAG + "fallback home surface visibility restored");
                         }
                     } catch (Throwable error) {
                         reportFailure(failed, "surface", error);
                     }
                 }
             });
-            XposedBridge.log(TAG + "installed surface hook v1.3");
+            HookSettings.log(TAG + "installed surface hook v1.4");
         } catch (Throwable error) {
-            XposedBridge.log(TAG + "unsupported surface API; no surface hook installed");
-            XposedBridge.log(error);
+            HookSettings.log(TAG + "unsupported surface API; no surface hook installed");
+            HookSettings.log(error);
         }
     }
 
@@ -221,36 +306,43 @@ public final class HomeVisibilityHook implements IXposedHookLoadPackage {
                         ComponentName component = home.getComponent();
                         ActivityManager.RunningTaskInfo task = (ActivityManager.RunningTaskInfo)
                                 getRunningTask.invoke(getInstance.invoke(null));
-                        if (component == null || task == null || !component.equals(task.topActivity)
-                                || "com.android.launcher".equals(component.getPackageName())) return;
-                        // Deliver the real Home intent to preserve launcher-defined actions
-                        // (close folders, return to the main page, show overview, etc.).
-                        // Do not create a fake closing-app animation for Home itself.
-                        context.startActivity(new Intent(home));
+                        if (component == null || "com.android.launcher".equals(component.getPackageName())) return;
+                        boolean skipAnimation = HookSettings.skipButtons();
+                        if (!skipAnimation && (task == null || !component.equals(task.topActivity))) return;
+                        // Default: preserve the existing Home-to-Home fix and launcher actions.
+                        // Optional: bypass the simulated app-exit animation for button Home too.
+                        Intent intent = new Intent(home);
+                        if (skipAnimation) {
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                            context.startActivity(intent,
+                                    ActivityOptions.makeCustomAnimation(context, 0, 0).toBundle());
+                        } else {
+                            context.startActivity(intent);
+                        }
                         param.setResult(null);
                         if (reported.compareAndSet(false, true)) {
-                            XposedBridge.log(TAG + "dispatched Home without animating the current home away");
+                            HookSettings.log(TAG + "dispatched Home without simulated exit animation");
                         }
                     } catch (Throwable error) {
                         // No successful dispatch: run the unmodified OEM implementation.
                         if (failed.compareAndSet(false, true)) {
-                            XposedBridge.log(TAG + "home key check failed; using OEM behavior and retrying next time");
-                            XposedBridge.log(error);
+                            HookSettings.log(TAG + "home key check failed; using OEM behavior and retrying next time");
+                            HookSettings.log(error);
                         }
                     }
                 }
             });
-            XposedBridge.log(TAG + "installed home key hook v1.3");
+            HookSettings.log(TAG + "installed home key hook v1.4");
         } catch (Throwable error) {
-            XposedBridge.log(TAG + "unsupported home key API; no home key hook installed");
-            XposedBridge.log(error);
+            HookSettings.log(TAG + "unsupported home key API; no home key hook installed");
+            HookSettings.log(error);
         }
     }
 
     private static void reportFailure(AtomicBoolean failed, String hook, Throwable error) {
         if (failed.compareAndSet(false, true)) {
-            XposedBridge.log(TAG + "disabled " + hook + " patch after incompatible API");
-            XposedBridge.log(error);
+            HookSettings.log(TAG + "disabled " + hook + " patch after incompatible API");
+            HookSettings.log(error);
         }
     }
 }

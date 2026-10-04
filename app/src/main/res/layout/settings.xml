@@ -1,0 +1,29 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+    <LinearLayout android:id="@+id/content" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/app_name" android:textSize="26sp" android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/settings_title" android:textSize="18sp" android:layout_marginBottom="28dp" />
+        <Switch android:id="@+id/logs" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="56dp" android:text="@string/logs" android:textSize="17sp" android:switchPadding="16dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/logs_summary" android:textSize="14sp" android:layout_marginBottom="24dp" />
+        <Switch android:id="@+id/buttons" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="56dp" android:text="@string/buttons" android:textSize="17sp" android:switchPadding="16dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/buttons_summary" android:textSize="14sp" android:layout_marginBottom="24dp" />
+        <Switch android:id="@+id/gestures" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="56dp" android:text="@string/gestures" android:textSize="17sp" android:switchPadding="16dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/gestures_summary" android:textSize="14sp" android:layout_marginBottom="32dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/settings_hint" android:textSize="14sp" android:layout_marginBottom="24dp" />
+        <Button android:id="@+id/language" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="48dp" android:text="@string/language" android:layout_marginBottom="12dp" />
+        <Button android:id="@+id/about" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="48dp" android:text="@string/about" />
+    </LinearLayout>
+</ScrollView>
